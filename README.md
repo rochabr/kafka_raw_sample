@@ -2,6 +2,34 @@
 
 This sample demonstrates how to use Dapr's PubSub API with Kafka in .NET applications. It consists of a publisher and subscriber application communicating through Kafka using raw JSON messages.
 
+## Using Declarative Subscriptions
+
+Instead of using programmatic subscriptions (the `/dapr/subscribe` endpoint), you can use declarative subscriptions. Create a file named `subscription.yaml` in your components directory:
+
+```yaml
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: message-subscription
+spec:
+  topic: messages
+  routes:
+    default: /messages
+  pubsubname: pubsub
+  metadata:
+    rawPayload: "true"
+```
+
+When using declarative subscriptions:
+
+1. Remove the `/dapr/subscribe` endpoint from your subscriber application
+2. Place the `subscription.yaml` file in your components directory
+3. The subscription will be automatically loaded when you start your application
+
+
+
+This sample demonstrates how to use Dapr's PubSub API with Kafka in .NET applications. It consists of a publisher and subscriber application communicating through Kafka using raw JSON messages.
+
 ## Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)

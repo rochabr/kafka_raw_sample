@@ -22,7 +22,7 @@ app.MapPost("/publish", async (DaprClient daprClient) =>
         message,           // message data
         new Dictionary<string, string> 
         { 
-            { "rawPayload", "true" },
+            { "isRawPayload", "true" },
             { "content-type", "application/json" }
         }
     );
