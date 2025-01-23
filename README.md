@@ -1,34 +1,6 @@
-# Dapr PubSub Sample with Kafka
+# Kafka Producer with Dapr Consumer Sample
 
-This sample demonstrates how to use Dapr's PubSub API with Kafka in .NET applications. It consists of a publisher and subscriber application communicating through Kafka using raw JSON messages.
-
-## Using Declarative Subscriptions
-
-Instead of using programmatic subscriptions (the `/dapr/subscribe` endpoint), you can use declarative subscriptions. Create a file named `subscription.yaml` in your components directory:
-
-```yaml
-apiVersion: dapr.io/v2alpha1
-kind: Subscription
-metadata:
-  name: message-subscription
-spec:
-  topic: messages
-  routes:
-    default: /messages
-  pubsubname: pubsub
-  metadata:
-    rawPayload: "true"
-```
-
-When using declarative subscriptions:
-
-1. Remove the `/dapr/subscribe` endpoint from your subscriber application
-2. Place the `subscription.yaml` file in your components directory
-3. The subscription will be automatically loaded when you start your application
-
-
-
-This sample demonstrates how to use Dapr's PubSub API with Kafka in .NET applications. It consists of a publisher and subscriber application communicating through Kafka using raw JSON messages.
+This sample demonstrates how to integrate a Kafka producer using the Confluent Kafka SDK with a Dapr-powered consumer in .NET applications. The producer publishes messages directly to Kafka, while the consumer uses Dapr's pub/sub building block to receive them.
 
 ## Prerequisites
 
@@ -47,7 +19,7 @@ docker-compose up -d
 
 ## Running the Applications
 
-1. Start the Subscriber:
+1. Start the Dapr Subscriber:
 
 ```bash
 dapr run --app-id subscriber \
@@ -57,19 +29,65 @@ dapr run --app-id subscriber \
          -- dotnet run --project src/Subscriber/Subscriber.csproj
 ```
 
-2. In a new terminal, start the Publisher:
+2. In a new terminal, start the Kafka Publisher:
 
 ```bash
-dapr run --app-id publisher \
-         --app-port 5000 \
-         --dapr-http-port 3500 \
-         --resources-path ./components \
-         -- dotnet run --project src/Publisher/Publisher.csproj
+dotnet run --project src/Publisher/Publisher.csproj
 ```
+
+## Subscription Configuration
+
+### Programmatic Subscription
+
+The subscriber uses programmatic subscription configured in code:
+
+```csharp
+app.MapGet("/dapr/subscribe", () =>
+{
+    var subscriptions = new[]
+    {
+        new
+        {
+            pubsubname = "pubsub",
+            topic = "messages",
+            route = "/messages",
+            metadata = new Dictionary<string, string>
+            {
+                { "isRawPayload", "true" }
+            }
+        }
+    };
+    return Results.Ok(subscriptions);
+});
+```
+
+### Declarative Subscription
+
+Alternatively, create a `subscription.yaml` in your components directory:
+
+```yaml
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: message-subscription
+spec:
+  topic: messages
+  routes:
+    default: /messages
+  pubsubname: pubsub
+  metadata:
+    isRawPayload: "true"
+```
+
+When using declarative subscriptions:
+
+1. Remove the `/dapr/subscribe` endpoint from your subscriber application
+2. Place the `subscription.yaml` file in your components directory
+3. The subscription will be automatically loaded when you start your application
 
 ## Testing
 
-To publish a message, use curl or any HTTP client:
+To publish a message:
 
 ```bash
 curl -X POST http://localhost:5000/publish
@@ -85,3 +103,10 @@ The subscriber will display received messages in its console output.
 ```bash
 docker-compose down
 ```
+
+## Important Notes
+
+1. The `isRawPayload` attribute is required for receiving raw JSON messages in .NET applications
+2. The publisher uses the Confluent.Kafka client directly to publish messages to Kafka
+3. The subscriber uses Dapr's pub/sub building block to consume messages
+4. Make sure your Kafka broker is running before starting the applications
