@@ -16,13 +16,13 @@ app.MapPost("/publish", async (DaprClient daprClient) =>
         DateTime.UtcNow
     );
 
-    await daprClient.PublishEventAsync<Message>(
+    await daprClient.PublishEventAsync(
         "pubsub",           // pubsub name
         "messages",         // topic name
         message,           // message data
         new Dictionary<string, string> 
         { 
-            { "isRawPayload", "true" },
+            { "rawPayload", "true" },
             { "content-type", "application/json" }
         }
     );
