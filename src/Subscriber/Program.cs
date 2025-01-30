@@ -17,7 +17,8 @@ app.MapGet("/dapr/subscribe", () =>
             route = "/messages",
             metadata = new Dictionary<string, string>
             {
-                { "isRawPayload", "true" }
+                { "isRawPayload", "true" },
+                { "content-type", "application/json" }
             }
         }
     };
@@ -30,23 +31,18 @@ app.MapPost("/messages", async (HttpContext context) =>
     using var reader = new StreamReader(context.Request.Body);
     var json = await reader.ReadToEndAsync();
     
-    // Parse the CloudEvent wrapper
-    using var jsonDoc = JsonDocument.Parse(json);
-    var root = jsonDoc.RootElement;
+    // Parse the event
+    var jsonDoc = JsonDocument.Parse(json);
     
-    // Extract the data property and deserialize it as Message
-    if (root.TryGetProperty("data", out var data))
-    {   
-        Console.WriteLine("Received message:");
-        Console.WriteLine(data.GetRawText());
-        var message = JsonSerializer.Deserialize<Message>(data.GetRawText());
-        if (message != null)
-        {
-            Console.WriteLine($"Received message: {message.Id}");
-            Console.WriteLine($"Content: {message.Content}");
-            Console.WriteLine($"Timestamp: {message.Timestamp}");
-        }
+    // Deserialize it as Message
+    var message = JsonSerializer.Deserialize<Message>(jsonDoc);
+    if (message != null)
+    {
+        Console.WriteLine($"Received message: {message.Id}");
+        Console.WriteLine($"Content: {message.Content}");
+        Console.WriteLine($"Timestamp: {message.Timestamp}");
     }
+
 
     return Results.Ok();
 });
